@@ -1,6 +1,5 @@
 # vitex
-An unholy conglomeration of vim and evince for writing LaTeX
-
+An unholy conglomeration of vim, evince, and friends for writing LaTeX
 
 # Goal
 
