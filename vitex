@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from os import environ, getcwd
-from os.path import join, splitext, realpath, split, isfile
-from subprocess import run
+from os import environ
+from os.path import splitext, realpath, split, isfile
 import argparse
 from neovim import attach
+
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Vte', '2.91')
 gi.require_version('EvinceDocument', '3.0')
 gi.require_version('EvinceView', '3.0')
-
-from gi.repository import (Gtk, GObject, Gio, GLib, Vte,
+from gi.repository import (Gtk, Gdk, GObject, Gio, GLib, Vte,
                            EvinceDocument, EvinceView)
 
 
@@ -23,6 +22,10 @@ class VitexApp(Gtk.Application):
         self.pdf_file = splitext(self.tex_file)[0] + '.pdf'
         self.proj_dir = split(self.tex_file)[0]
         self.nvim = None
+        self.terminal = None
+        self.doc_view = None
+        self.doc_model = None
+        self.doc_loaded = False
         self.connect("activate", self.on_activate)
 
     def add_editor_window(self, pane):
@@ -53,47 +56,48 @@ class VitexApp(Gtk.Application):
         scroll = Gtk.ScrolledWindow()
         pane.pack2(scroll)
         EvinceDocument.init()
-        doc = EvinceDocument.Document.factory_get_document('file://' + self.pdf_file)
         self.doc_view = EvinceView.View()
         self.doc_model = EvinceView.DocumentModel()
-        self.doc_model.set_document(doc)
         self.doc_view.set_model(self.doc_model)
+        self.load_pdf()
         scroll.add(self.doc_view)
-
-    # def add_header(self, window):
-    #     hb = Gtk.HeaderBar()
-    #     hb.set_show_close_button(True)
-    #     window.set_titlebar(hb)
-    #
-    #     button = Gtk.Button()
-    #     icon = Gio.ThemedIcon(name="media-playback-start-symbolic.symbolic")
-    #     image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
-    #     button.add(image)
-    #     button.connect("clicked", self.build)
-    #     hb.pack_end(button)
 
     def attach_nvim(self):
         self.nvim = attach('socket', path='/tmp/vitex.sock')
         self.nvim.command('cd ' + self.proj_dir)
         self.nvim.command('edit ' + self.tex_file)
 
-    # def build(self, _):
-    #     f_dir, f_name = split(self.tex_file)
-    #     f_basename = splitext(f_name)[0]
-    #     proc = run(['latexmk', '-f', '-pdf', f_name], cwd=f_dir)
-    #     pdf_name = join(f_dir, f_basename+'.pdf')
-    #     if isfile(pdf_name):
-    #         self.doc_model.get_document().load('file://'+pdf_name)
-    #         self.doc_view.reload()
+    def load_pdf(self):
+        if isfile(self.pdf_file):
+            if self.doc_loaded:
+                self.doc_model.get_document().load('file://'+self.pdf_file)
+                self.doc_view.reload()
+            else:
+                doc = EvinceDocument.Document.factory_get_document('file://' + self.pdf_file)
+                self.doc_model.set_document(doc)
+                self.doc_loaded = True
 
     def reload_pdf(self, m, f, o, event):
         if event == Gio.FileMonitorEvent.CHANGES_DONE_HINT:
-            f_dir, f_name = split(self.tex_file)
-            f_basename = splitext(f_name)[0]
-            pdf_name = join(f_dir, f_basename+'.pdf')
-            if isfile(pdf_name):
-                self.doc_model.get_document().load('file://'+pdf_name)
-                self.doc_view.reload()
+            self.load_pdf()
+
+    def increment_text_size(self, increment):
+        current_scale = self.terminal.get_font_scale()
+        if increment > 0:
+            self.terminal.set_font_scale(current_scale + 0.1)
+        else:
+            self.terminal.set_font_scale(current_scale - 0.1)
+
+    def on_key_press(self, obj, event):
+
+        if event.state & Gdk.ModifierType.CONTROL_MASK:
+            if event.keyval == 45:  # '-'
+                self.increment_text_size(-1)
+                return True
+            elif event.keyval == 61:  # '+'
+                self.increment_text_size(+1)
+                return True
+        return False
 
     def on_activate(self, data=None):
         window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
@@ -101,7 +105,6 @@ class VitexApp(Gtk.Application):
         window.set_border_width(14)
         window.set_default_size(1400, 900)
         pane = Gtk.Paned()
-        # self.add_header(window)
         self.add_editor_window(pane)
         self.add_pdf_viewer(pane)
         self.attach_nvim()
@@ -111,12 +114,12 @@ class VitexApp(Gtk.Application):
         self.monitor = gfile.monitor_file(Gio.FileMonitorFlags.NONE, None)
         self.monitor.connect("changed", self.reload_pdf)
 
+        window.connect('key-press-event', self.on_key_press)
+
         window.add(pane)
         window.show_all()
         self.add_window(window)
         pane.set_position(window.get_allocated_width() // 2)  # in pixels
-
-
 
 
 if __name__ == "__main__":
@@ -126,4 +129,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     app = VitexApp(args.texfile)
     app.run(None)
-

@@ -9,7 +9,7 @@ Plugin 'gmarik/Vundle.vim'
 Plugin 'airblade/vim-gitgutter'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
-" Plugin 'ntpeters/vim-airline-colornum'
+Plugin 'ntpeters/vim-airline-colornum'
 Plugin 'tpope/vim-commentary'
 Plugin 'tpope/vim-fugitive'
 
