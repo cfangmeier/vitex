@@ -1,13 +1,28 @@
 # vitex
 An unholy conglomeration of vim, evince, and friends for writing LaTeX
 
-# Goal
+![This is what it looks like!](https://github.com/cfangmeier/vitex/raw/master/screenshot.png)
 
-Do you prefer to use vim/nvim to edit your LaTeX files, but wish there was better integration between the editor and your pdf viewer? Well this is the project for you! The goal of vitex is to bring together high quality tools in a convenient package to make editing LaTeX as painless(tm) as possible.
+## Goal
 
-# Requirements
+Do you prefer to use vim to edit your LaTeX files, but wish there was better integration between the editor and your pdf viewer? Well this is the project for you! The goal of vitex is to bring together high quality tools in a convenient package to make editing LaTeX as painless(tm) as possible.
 
-  - Is probably only ever going to be supported on Linux.
+## Status
+
+Currently working on arch linux with the Gnome desktop environment.
+
+## Features!
+
+  - **Real** neovim via Vte
+  - Custom `init.vim` for editing LaTeX (of course feel free to personalize)
+  - Embedded PDF view using Evince with auto reload
+  - That's pretty much it!
+
+## Requirements
+
+  - Python 3
+  - Gtk
   - Evince
-  - vim/neovim
-  - PyGObject
+  - neovim
+
+## Setup
