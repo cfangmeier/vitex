@@ -19,10 +19,11 @@ from gi.repository import (Gtk, GObject, Gio, GLib, Vte,
 class VitexApp(Gtk.Application):
     def __init__(self, texfile):
         Gtk.Application.__init__(self, application_id="apps.vitex", flags=Gio.ApplicationFlags.FLAGS_NONE)
-        self.texfile = realpath(texfile)
+        self.tex_file = realpath(texfile)
+        self.pdf_file = splitext(self.tex_file)[0] + '.pdf'
+        self.proj_dir = split(self.tex_file)[0]
         self.nvim = None
         self.connect("activate", self.on_activate)
-        # self.my_accelerators = Gtk.AccelGroup()
 
     def add_editor_window(self, pane):
         self.terminal = Vte.Terminal()
@@ -35,6 +36,10 @@ class VitexApp(Gtk.Application):
             None,
             None,
         )
+
+        def do_exit(*args, **kwargs):
+            self.quit()
+        self.terminal.connect("child-exited", do_exit)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
         scroller = Gtk.ScrolledWindow()
@@ -48,90 +53,70 @@ class VitexApp(Gtk.Application):
         scroll = Gtk.ScrolledWindow()
         pane.pack2(scroll)
         EvinceDocument.init()
-        pdffile = splitext(self.texfile)[0] + '.pdf'
-        doc = EvinceDocument.Document.factory_get_document('file://'+pdffile)
+        doc = EvinceDocument.Document.factory_get_document('file://' + self.pdf_file)
         self.doc_view = EvinceView.View()
         self.doc_model = EvinceView.DocumentModel()
         self.doc_model.set_document(doc)
         self.doc_view.set_model(self.doc_model)
         scroll.add(self.doc_view)
 
-    def add_header(self, window):
-        hb = Gtk.HeaderBar()
-        hb.set_show_close_button(True)
-        # hb.props.title = "HeaderBar example"
-        window.set_titlebar(hb)
-
-        button = Gtk.Button()
-        icon = Gio.ThemedIcon(name="media-playback-start-symbolic.symbolic")
-        image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
-        button.add(image)
-        button.connect("clicked", self.build)
-        hb.pack_end(button)
-
-
-        # box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-        # Gtk.StyleContext.add_class(box.get_style_context(), "linked")
-        #
-        # button = Gtk.Button()
-        # button.add(Gtk.Arrow(Gtk.ArrowType.LEFT, Gtk.ShadowType.NONE))
-        # box.add(button)
-        #
-        # button = Gtk.Button()
-        # button.add(Gtk.Arrow(Gtk.ArrowType.RIGHT, Gtk.ShadowType.NONE))
-        # box.add(button)
-        #
-        # hb.pack_start(box)
-
-        # self.add(Gtk.TextView())
+    # def add_header(self, window):
+    #     hb = Gtk.HeaderBar()
+    #     hb.set_show_close_button(True)
+    #     window.set_titlebar(hb)
+    #
+    #     button = Gtk.Button()
+    #     icon = Gio.ThemedIcon(name="media-playback-start-symbolic.symbolic")
+    #     image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.BUTTON)
+    #     button.add(image)
+    #     button.connect("clicked", self.build)
+    #     hb.pack_end(button)
 
     def attach_nvim(self):
         self.nvim = attach('socket', path='/tmp/vitex.sock')
-        self.nvim.command('cd ' + getcwd())
-        self.nvim.command('edit ' + self.texfile)
+        self.nvim.command('cd ' + self.proj_dir)
+        self.nvim.command('edit ' + self.tex_file)
 
-    def build(self, _):
-        f_dir, f_name = split(self.texfile)
-        f_basename = splitext(f_name)[0]
-        # proc = run(['rubber', f_basename], cwd=f_dir)
-        proc = run(['latexmk', '-f', '-pdf', f_name], cwd=f_dir)
-        pdf_name = join(f_dir, f_basename+'.pdf')
-        if isfile(pdf_name):
-            self.doc_model.get_document().load('file://'+pdf_name)
-            self.doc_view.reload()
+    # def build(self, _):
+    #     f_dir, f_name = split(self.tex_file)
+    #     f_basename = splitext(f_name)[0]
+    #     proc = run(['latexmk', '-f', '-pdf', f_name], cwd=f_dir)
+    #     pdf_name = join(f_dir, f_basename+'.pdf')
+    #     if isfile(pdf_name):
+    #         self.doc_model.get_document().load('file://'+pdf_name)
+    #         self.doc_view.reload()
 
-    # def add_accelerator(self, widget, accelerator, signal="activate"):
-    #     """Adds a keyboard shortcut"""
-    #     key, mod = Gtk.accelerator_parse(accelerator)
-    #     widget.add_accelerator(signal, self.my_accelerators, key, mod, Gtk.AccelFlags.VISIBLE)
-
-    @staticmethod
-    def hello():
-        print("hello world")
+    def reload_pdf(self, m, f, o, event):
+        if event == Gio.FileMonitorEvent.CHANGES_DONE_HINT:
+            f_dir, f_name = split(self.tex_file)
+            f_basename = splitext(f_name)[0]
+            pdf_name = join(f_dir, f_basename+'.pdf')
+            if isfile(pdf_name):
+                self.doc_model.get_document().load('file://'+pdf_name)
+                self.doc_view.reload()
 
     def on_activate(self, data=None):
         window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         window.set_title("Vitex")
         window.set_border_width(14)
-        window.set_default_size(600, 600)
+        window.set_default_size(1400, 900)
         pane = Gtk.Paned()
-        self.add_header(window)
+        # self.add_header(window)
         self.add_editor_window(pane)
         self.add_pdf_viewer(pane)
         self.attach_nvim()
 
-        # GObject.signal_new('do_build', window,
-        #                    GObject.SignalFlags.RUN_LAST,
-        #                    GObject.TYPE_NONE,
-        #                    (),
-        #                    )
-        # window.connect('do_build', self.hello)
-        # self.add_accelerator(window, "<Control>b", signal='do_build')
+        # Setup pdf file monitor
+        gfile = Gio.File.new_for_path(self.pdf_file)
+        self.monitor = gfile.monitor_file(Gio.FileMonitorFlags.NONE, None)
+        self.monitor.connect("changed", self.reload_pdf)
 
-        pane.set_position(300)  # in pixels
         window.add(pane)
         window.show_all()
         self.add_window(window)
+        pane.set_position(window.get_allocated_width() // 2)  # in pixels
+
+
 
 
 if __name__ == "__main__":
