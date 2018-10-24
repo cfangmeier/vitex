@@ -1,11 +1,11 @@
-# vitex
+# ViTeX
 An unholy conglomeration of vim, evince, and friends for writing LaTeX
 
 ![This is what it looks like!](https://github.com/cfangmeier/vitex/raw/master/screenshot.png)
 
 ## Goal
 
-Do you prefer to use vim to edit your LaTeX files, but wish there was better integration between the editor and your pdf viewer? Well this is the project for you! The goal of vitex is to bring together high quality tools in a convenient package to make editing LaTeX as painless(tm) as possible.
+Do you prefer to use vim to edit your LaTeX files, but wish there was better integration between the editor and your pdf viewer? Well this is the project for you! The goal of ViTeX is to bring together high quality tools in a convenient package to make editing LaTeX as painless(tm) as possible.
 
 ## Status
 
