@@ -21,9 +21,17 @@ Currently working on arch linux with the Gnome desktop environment.
 
 ## Requirements
 
+This is likely a non-exhaustive list, so please feel free to create an issue if you found you needed something else.
+
   - Python 3
-  - Gtk
+  - Gtk+
   - Evince
   - neovim
 
 ## Setup
+```sh
+git clone git@github.com:cfangmeier/vitex.git
+cd vitex
+. ./setup.sh  # Creates a python virtualenv and clones Vundle.vim
+./vitex path-to-your-sourcefile.tex  # first time setup creates init.vim and installs other vim plugins
+```
