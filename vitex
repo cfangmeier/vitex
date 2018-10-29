@@ -3,6 +3,7 @@
 
 from os import environ
 from os.path import splitext, realpath, split, isfile, join
+from subprocess import run
 import argparse
 from neovim import attach
 
@@ -66,8 +67,6 @@ class VitexApp(Gtk.Application):
         self.nvim = attach('socket', path='/tmp/vitex.sock')
         self.nvim.command('cd ' + self.proj_dir)
         self.nvim.command('edit ' + self.tex_file)
-        if FIRST_TIME:
-            self.nvim.command('PluginInstall')
 
     def load_pdf(self):
         if isfile(self.pdf_file):
@@ -148,6 +147,8 @@ if __name__ == "__main__":
         text = text.replace('___INSTALLDIR___', INSTALLDIR)
         with open(join(INSTALLDIR, 'init.vim'), 'w') as f:
             f.write(text)
+        print('Installing vim plugins')
+        run(['nvim', '-u', 'init.vim', '-Es', '+PluginInstall', '+qall'])
         print('done')
     app = VitexApp(args.texfile)
     print("starting ViTeX")
