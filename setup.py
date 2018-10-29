@@ -36,4 +36,11 @@ setup(
     scripts=[
         'vitex',
     ],
+    package_data={
+        # If any package contains *.txt files, include them:
+        '': ['requirements.txt'],
+        # And include any *.dat files found in the 'data' subdirectory
+        # of the 'mypkg' package, also:
+        # 'mypkg': ['data/*.dat'],
+    }
 )
