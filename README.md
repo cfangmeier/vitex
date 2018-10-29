@@ -1,4 +1,5 @@
-# ViTeX
+![ViTeX](https://raw.githubusercontent.com/cfangmeier/vitex/master/vitex.png)
+
 An unholy conglomeration of vim, evince, and friends for writing LaTeX
 
 ![This is what it looks like!](https://github.com/cfangmeier/vitex/raw/master/screenshot.png)
