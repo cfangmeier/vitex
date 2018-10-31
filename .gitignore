@@ -1,6 +1,7 @@
 # nvim packages
 nvim_config/bundle/*
 init.vim
+undo/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

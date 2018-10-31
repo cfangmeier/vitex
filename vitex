@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from os import environ
+from os import environ, mkdir
 from os.path import splitext, realpath, split, isfile, join
 from subprocess import run
 import argparse
@@ -31,6 +31,7 @@ class VitexApp(Gtk.Application):
 
     def add_editor_window(self):
         self.terminal = Vte.Terminal()
+        self.terminal.set_color_background(Gdk.RGBA(0, 43/256, 54/256, 1))
         self.terminal.spawn_sync(
             Vte.PtyFlags.DEFAULT,
             environ['HOME'],
@@ -104,14 +105,14 @@ class VitexApp(Gtk.Application):
         elif is_ctrl and event.keyval == 65362:  # up arrow
             self.pane.set_position(self.window.get_allocated_width() // 2)  # in pixels
         elif is_ctrl and event.keyval == 98:  # 'b'
-            self.nvim.command('Latexmk')
+            self.nvim.command('Latexmk', async_=True)  # async_ here to avoid hanging UI
         else:
             return False
         return True
 
     def on_activate(self, data=None):
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-        self.window.set_title("Vitex")
+        self.window.set_title("Vitex - (" + self.tex_file + ")")
         self.window.set_border_width(0)
         self.window.set_default_size(1400, 900)
         self.pane = Gtk.Paned()
@@ -147,6 +148,9 @@ if __name__ == "__main__":
         text = text.replace('___INSTALLDIR___', INSTALLDIR)
         with open(join(INSTALLDIR, 'init.vim'), 'w') as f:
             f.write(text)
+        mkdir(join(INSTALLDIR, 'backup'))
+        mkdir(join(INSTALLDIR, 'swap'))
+        mkdir(join(INSTALLDIR, 'undo'))
         print('Installing vim plugins')
         run(['nvim', '-u', 'init.vim', '-Es', '+PluginInstall', '+qall'])
         print('done')
