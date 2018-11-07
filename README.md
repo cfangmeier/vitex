@@ -46,5 +46,5 @@ python setup.py install --user
 ```
   - Via pip
 ```sh
-pip install vitex
+pip install vitex --user
 ```
