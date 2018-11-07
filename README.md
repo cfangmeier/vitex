@@ -17,6 +17,7 @@ Currently working on arch linux with the Gnome desktop environment.
   - **Real** neovim via Vte
   - Custom `init.vim` for editing LaTeX (of course feel free to personalize)
   - Embedded PDF view using Evince with auto reload
+  - Synctex support
   - That's pretty much it!
 
 ## Requirements

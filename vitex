@@ -24,6 +24,7 @@ class VitexApp(Gtk.Application):
         self.proj_dir = split(self.tex_file)[0]
         self.nvim = None
         self.terminal = None
+        self.doc = None
         self.doc_view = None
         self.doc_model = None
         self.doc_loaded = False
@@ -55,14 +56,15 @@ class VitexApp(Gtk.Application):
         self.pane.pack1(box)
 
     def add_pdf_viewer(self):
-        scroll = Gtk.ScrolledWindow()
-        self.pane.pack2(scroll)
+        self.scroll = Gtk.ScrolledWindow()
+        self.pane.pack2(self.scroll)
         EvinceDocument.init()
         self.doc_view = EvinceView.View()
+        self.doc_view.connect('button-press-event', self.synctex)
         self.doc_model = EvinceView.DocumentModel()
         self.doc_view.set_model(self.doc_model)
         self.load_pdf()
-        scroll.add(self.doc_view)
+        self.scroll.add(self.doc_view)
 
     def attach_nvim(self):
         self.nvim = attach('socket', path='/tmp/vitex.sock')
@@ -75,13 +77,39 @@ class VitexApp(Gtk.Application):
                 self.doc_model.get_document().load('file://'+self.pdf_file)
                 self.doc_view.reload()
             else:
-                doc = EvinceDocument.Document.factory_get_document('file://' + self.pdf_file)
-                self.doc_model.set_document(doc)
+                self.doc = EvinceDocument.Document.factory_get_document('file://' + self.pdf_file)
+                self.doc_model.set_document(self.doc)
                 self.doc_loaded = True
 
     def reload_pdf(self, m, f, o, event):
         if event == Gio.FileMonitorEvent.CHANGES_DONE_HINT:
             self.load_pdf()
+
+    def synctex(self, obj, event):
+        click_x = event.x + self.scroll.get_hscrollbar().get_value()
+        click_y = event.y + self.scroll.get_vscrollbar().get_value()
+        for idx in range(self.doc.get_n_pages()):
+            page_rect = Gdk.Rectangle()
+            page_border = Gtk.Border()
+            self.doc_view.get_page_extents(idx, page_rect, page_border)
+            if (page_rect.x < click_x < (page_rect.x + page_rect.width) and
+                    page_rect.y < click_y < (page_rect.y + page_rect.height)):
+                page_size = self.doc.get_page_size(idx)
+                page_x = (page_size.width / page_rect.width) * (click_x - page_rect.x)
+                page_y = (page_size.height / page_rect.height) * (click_y - page_rect.y)
+                page_idx = idx
+                break
+        else:  # clicked outside page
+            return
+
+        print(f'clicked on page {page_idx} at page coordinates {page_x}, {page_y}')
+
+        result = self.doc.synctex_backward_search(page_idx, page_x, page_y)
+        if result is not None:
+            filename = realpath(result.filename)
+            if not isfile(filename): return
+            self.nvim.command(f'edit {filename}')
+            self.nvim.command(f'{result.line}')
 
     def increment_text_size(self, increment):
         current_scale = self.terminal.get_font_scale()
