@@ -14,6 +14,7 @@ gi.require_version('EvinceView', '3.0')
 from gi.repository import (Gtk, Gdk, GObject, Gio, GLib, Vte,
                            EvinceDocument, EvinceView)
 
+__version__ = '0.2.1'
 SOCKET = '/tmp/vitex.sock'
 INSTALLDIR = join(expanduser('~'), '.local/vitex/')
 
@@ -24,11 +25,6 @@ class VitexApp(Gtk.Application):
         self.tex_file = realpath(texfile)
         self.pdf_file = splitext(self.tex_file)[0] + '.pdf'
         self.proj_dir = split(self.tex_file)[0]
-        self.nvim = None
-        self.terminal = None
-        self.doc = None
-        self.doc_view = None
-        self.doc_model = None
         self.doc_loaded = False
         self.connect("activate", self.on_activate)
 
@@ -182,9 +178,10 @@ def first_time_setup():
     make_conf_dir('backup')
     make_conf_dir('swap')
     make_conf_dir('undo')
-    print('Installing vim plugins')
+    print('Installing Vundle')
     make_conf_dir('nvim/bundle')
     run(['git', 'clone', 'https://github.com/VundleVim/Vundle.vim.git', join(INSTALLDIR, 'nvim/bundle/Vundle.vim')])
+    print('Installing additional plugins')
     run(['nvim', '-u', join(INSTALLDIR, 'init.vim'), '-Es', '+PluginInstall', '+qall'])
     print('done')
     print('The neovim configuration file for vitex is installed in:')

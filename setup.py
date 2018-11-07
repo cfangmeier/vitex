@@ -1,4 +1,5 @@
 from setuptools import setup
+from vitex import __version__
 
 import sys
 
@@ -14,7 +15,7 @@ with open('README.md') as f:
 
 setup(
     name='vitex',
-    version='0.1.0',
+    version=__version__,
     description='An unholy conglomeration of vim, evince, and friends for writing LaTeX',
     long_description=desc,
     long_description_content_type='text/markdown',
