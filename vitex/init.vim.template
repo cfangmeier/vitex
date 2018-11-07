@@ -1,8 +1,8 @@
 " nvimrc - Startup script for Neovim Editor
 filetype off
-set rtp+=___INSTALLDIR___/nvim_config/bundle/Vundle.vim
+set rtp+=___INSTALLDIR___nvim/bundle/Vundle.vim
 
-call vundle#begin('___INSTALLDIR___/nvim_config/bundle/')
+call vundle#begin('___INSTALLDIR___nvim/bundle/')
 
 Plugin 'gmarik/Vundle.vim'
 

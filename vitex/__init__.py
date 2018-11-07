@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-#-*- coding:utf-8 -*-
 
-from os import environ, mkdir, remove
-from os.path import splitext, realpath, split, isfile, join
+from os import environ, remove, makedirs
+from os.path import splitext, realpath, split, isfile, join, expanduser
 from subprocess import run
 import argparse
 from neovim import attach
@@ -16,6 +15,8 @@ from gi.repository import (Gtk, Gdk, GObject, Gio, GLib, Vte,
                            EvinceDocument, EvinceView)
 
 SOCKET = '/tmp/vitex.sock'
+INSTALLDIR = join(expanduser('~'), '.local/vitex/')
+
 
 class VitexApp(Gtk.Application):
     def __init__(self, texfile):
@@ -137,6 +138,7 @@ class VitexApp(Gtk.Application):
             self.pane.set_position(self.window.get_allocated_width() // 2)  # in pixels
         elif is_ctrl and event.keyval == 98:  # 'b'
             self.nvim.command('Latexmk', async_=True)  # async_ here to avoid hanging UI
+            self.doc_view.set_loading(True)
         else:
             return False
         return True
@@ -164,25 +166,35 @@ class VitexApp(Gtk.Application):
         self.pane.set_position(self.window.get_allocated_width() // 2)  # in pixels
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    add = parser.add_argument
-    add('texfile')
-    args = parser.parse_args()
-    INSTALLDIR = split(realpath(__file__))[0]
+def first_time_setup():
+
+    def make_conf_dir(path):
+        makedirs(join(INSTALLDIR, path), exist_ok=True)
+
+    print('performing first time setup')
+    pkgdir = split(realpath(__file__))[0]
+    with open(join(pkgdir, 'init.vim.template'), 'r') as f:
+        text = f.read()
+    text = text.replace('___INSTALLDIR___', INSTALLDIR)
+    make_conf_dir('')
+    with open(join(INSTALLDIR, 'init.vim'), 'w') as f:
+        f.write(text)
+    make_conf_dir('backup')
+    make_conf_dir('swap')
+    make_conf_dir('undo')
+    print('Installing vim plugins')
+    make_conf_dir('nvim/bundle')
+    run(['git', 'clone', 'https://github.com/VundleVim/Vundle.vim.git', join(INSTALLDIR, 'nvim/bundle/Vundle.vim')])
+    run(['nvim', '-u', join(INSTALLDIR, 'init.vim'), '-Es', '+PluginInstall', '+qall'])
+    print('done')
+    print('The neovim configuration file for vitex is installed in:')
+    print(join(INSTALLDIR, 'init.vim'))
+    print('Please feel free to customize it as you see fit')
+
+
+def vitex(args):
     if not isfile(join(INSTALLDIR, 'init.vim')):
-        print('performing first time setup')
-        with open(join(INSTALLDIR, 'init.vim.template'), 'r') as f:
-            text = f.read()
-        text = text.replace('___INSTALLDIR___', INSTALLDIR)
-        with open(join(INSTALLDIR, 'init.vim'), 'w') as f:
-            f.write(text)
-        mkdir(join(INSTALLDIR, 'backup'))
-        mkdir(join(INSTALLDIR, 'swap'))
-        mkdir(join(INSTALLDIR, 'undo'))
-        print('Installing vim plugins')
-        run(['nvim', '-u', 'init.vim', '-Es', '+PluginInstall', '+qall'])
-        print('done')
+        first_time_setup()
     app = VitexApp(args.texfile)
     print("starting ViTeX")
     app.run(None)

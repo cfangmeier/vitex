@@ -32,15 +32,15 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     keywords='vim LaTeX Gtk',
-    install_requires=requirements,
-    scripts=[
-        'vitex',
-    ],
+    packages=['vitex'],
+    package_dir={'vitex': 'vitex'},
     package_data={
-        # If any package contains *.txt files, include them:
-        '': ['requirements.txt'],
-        # And include any *.dat files found in the 'data' subdirectory
-        # of the 'mypkg' package, also:
-        # 'mypkg': ['data/*.dat'],
-    }
+        'vitex': ['init.vim.template'],
+    },
+    install_requires=requirements,
+    # Next 2 lines allow for `python setup.py install` type installation
+    # include_package_data=True,
+    scripts=[
+        'scripts/vitex',
+    ],
 )

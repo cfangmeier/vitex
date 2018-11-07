@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import argparse
+from vitex import vitex
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    add = parser.add_argument
+    add('texfile')
+    args = parser.parse_args()
+    vitex(args)
