@@ -28,6 +28,14 @@ This is likely a non-exhaustive list, so please feel free to create an issue if 
   - Gtk+
   - Evince
   - neovim
+  
+ ## Controls
+   - `ctrl -`: Decrease editor font size
+   - `ctrl +`: Increase editor font size
+   - `ctrl b`: Start async build with latexmk
+   - `ctrl right`: move divider to right
+   - `ctrl left`: move divider to left
+   - `ctrl up`: move divider to center
 
 ## Setup
 ```sh
