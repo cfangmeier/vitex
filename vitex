@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #-*- coding:utf-8 -*-
 
-from os import environ, mkdir
+from os import environ, mkdir, remove
 from os.path import splitext, realpath, split, isfile, join
 from subprocess import run
 import argparse
@@ -15,6 +15,7 @@ gi.require_version('EvinceView', '3.0')
 from gi.repository import (Gtk, Gdk, GObject, Gio, GLib, Vte,
                            EvinceDocument, EvinceView)
 
+SOCKET = '/tmp/vitex.sock'
 
 class VitexApp(Gtk.Application):
     def __init__(self, texfile):
@@ -33,10 +34,12 @@ class VitexApp(Gtk.Application):
     def add_editor_window(self):
         self.terminal = Vte.Terminal()
         self.terminal.set_color_background(Gdk.RGBA(0, 43/256, 54/256, 1))
+        if isfile(SOCKET):
+            remove(SOCKET)
         self.terminal.spawn_sync(
             Vte.PtyFlags.DEFAULT,
             environ['HOME'],
-            ["/usr/bin/nvim", "-u", join(INSTALLDIR, "init.vim"), "--listen", "/tmp/vitex.sock"],
+            ["/usr/bin/nvim", "-u", join(INSTALLDIR, "init.vim"), "--listen", SOCKET],
             [],
             GLib.SpawnFlags.DO_NOT_REAP_CHILD,
             None,
@@ -67,7 +70,7 @@ class VitexApp(Gtk.Application):
         self.scroll.add(self.doc_view)
 
     def attach_nvim(self):
-        self.nvim = attach('socket', path='/tmp/vitex.sock')
+        self.nvim = attach('socket', path=SOCKET)
         self.nvim.command('cd ' + self.proj_dir)
         self.nvim.command('edit ' + self.tex_file)
 
@@ -102,7 +105,7 @@ class VitexApp(Gtk.Application):
         else:  # clicked outside page
             return
 
-        print(f'clicked on page {page_idx} at page coordinates {page_x}, {page_y}')
+        # print(f'clicked on page {page_idx} at page coordinates {page_x}, {page_y}')
 
         result = self.doc.synctex_backward_search(page_idx, page_x, page_y)
         if result is not None:
@@ -167,9 +170,7 @@ if __name__ == "__main__":
     add('texfile')
     args = parser.parse_args()
     INSTALLDIR = split(realpath(__file__))[0]
-    FIRST_TIME = False
     if not isfile(join(INSTALLDIR, 'init.vim')):
-        FIRST_TIME = True
         print('performing first time setup')
         with open(join(INSTALLDIR, 'init.vim.template'), 'r') as f:
             text = f.read()
