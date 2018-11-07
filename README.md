@@ -10,7 +10,7 @@ Do you prefer to use vim to edit your LaTeX files, but wish there was better int
 
 ## Status
 
-Currently working on arch linux with the Gnome desktop environment.
+Development and testing happen on arch linux with the Gnome desktop environment. Most likely will work on any linux (and possibly OSX) with the right packages installed. Not optimistic about windows.
 
 ## Features!
 
