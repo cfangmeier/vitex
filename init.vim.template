@@ -92,7 +92,7 @@ let g:airline_mode_map = {
 let g:LatexBox_latexmk_async=1
 let g:LatexBox_autojump=1
 let g:LatexBox_quickfix=4
-let g:LatexBox_latexmk_options="-pdf"
+let g:LatexBox_latexmk_options="-pdf -pdflatex='pdflatex -synctex=1 \%O \%S'"
 let g:LatexBox_Folding=1
 
 "" Buffergator
