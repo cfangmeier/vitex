@@ -38,9 +38,13 @@ This is likely a non-exhaustive list, so please feel free to create an issue if 
    - `ctrl up`: move divider to center
 
 ## Setup
+  - Through Git
 ```sh
 git clone git@github.com:cfangmeier/vitex.git
 cd vitex
-. ./setup.sh  # Creates a python virtualenv and clones Vundle.vim
-./vitex path-to-your-sourcefile.tex  # first time setup creates init.vim and installs other vim plugins
+python setup.py install --user
+```
+  - Via pip
+```sh
+pip install vitex
 ```
