@@ -22,7 +22,7 @@ INSTALLDIR = join(expanduser('~'), '.local/vitex/')
 class VitexApp(Gtk.Application):
     def __init__(self, texfile):
         Gtk.Application.__init__(self, application_id="apps.vitex", flags=Gio.ApplicationFlags.FLAGS_NONE)
-        self.tex_file = realpath(texfile)
+        self.tex_file = realpath(expanduser(texfile))
         self.pdf_file = splitext(self.tex_file)[0] + '.pdf'
         self.proj_dir = split(self.tex_file)[0]
         self.doc_loaded = False
@@ -31,8 +31,10 @@ class VitexApp(Gtk.Application):
     def add_editor_window(self):
         self.terminal = Vte.Terminal()
         self.terminal.set_color_background(Gdk.RGBA(0, 43/256, 54/256, 1))
-        if isfile(SOCKET):
+        try:
             remove(SOCKET)
+        except FileNotFoundError:
+            pass
         self.terminal.spawn_sync(
             Vte.PtyFlags.DEFAULT,
             environ['HOME'],
@@ -65,6 +67,14 @@ class VitexApp(Gtk.Application):
         self.doc_view.set_model(self.doc_model)
         self.load_pdf()
         self.scroll.add(self.doc_view)
+
+        # now for eqn previewer
+        self.prev_scroll = Gtk.ScrolledWindow()
+        self.prev_view = EvinceView.View()
+        self.prev_scroll.add(self.prev_view)
+        # self.doc_view.connect('button-press-event', self.synctex)
+        self.prev_model = EvinceView.DocumentModel()
+        self.prev_view.set_model(self.prev_model)
 
     def attach_nvim(self):
         self.nvim = attach('socket', path=SOCKET)
@@ -118,6 +128,35 @@ class VitexApp(Gtk.Application):
         else:
             self.terminal.set_font_scale(current_scale - 0.1)
 
+    def preview_equation(self):
+        # First send a literal escape to exit visual mode and populate the marks
+        self.nvim.feedkeys(bytes([27]))
+        vmode = self.nvim.funcs.visualmode()
+        if vmode == "V":  # Visual line mode
+            start_l, _ = self.nvim.current.buffer.mark('<')
+            end_l, _ = self.nvim.current.buffer.mark('>')
+            eqn = '\n'.join(self.nvim.current.buffer[start_l-1:end_l])
+        else:
+            return  # not implemented
+        text = '\n'.join([
+            r'\documentclass{standalone}',
+            r'\begin{document}',
+            r'$\displaystyle',
+            eqn,
+            r'$',
+            r'\end{document}'
+        ])
+        if not self.eqn_ed_pane.get_reveal_child():
+            with open('/tmp/vitex_preview.tex', 'w') as f:
+                f.write(text)
+            run(['pdflatex', '/tmp/vitex_preview.tex'], cwd='/tmp')
+            if isfile('/tmp/vitex_preview.pdf'):
+                prev = EvinceDocument.Document.factory_get_document('file://' + '/tmp/vitex_preview.pdf')
+                self.prev_model.set_document(prev)
+            self.eqn_ed_pane.set_reveal_child(True)
+        else:
+            self.eqn_ed_pane.set_reveal_child(False)
+
     def on_key_press(self, obj, event):
         is_ctrl = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
         # is_alt = bool(event.state & Gdk.ModifierType.MOD1_MASK)
@@ -134,7 +173,11 @@ class VitexApp(Gtk.Application):
             self.pane.set_position(self.window.get_allocated_width() // 2)  # in pixels
         elif is_ctrl and event.keyval == 98:  # 'b'
             self.nvim.command('Latexmk', async_=True)  # async_ here to avoid hanging UI
-            self.doc_view.set_loading(True)
+            # self.doc_view.set_loading(True)  # seems to do nothing...
+        elif is_ctrl and event.keyval == 101:  # 'e'
+            print('display equation editor')
+            self.preview_equation()
+            # self.launch_equation_editor()
         else:
             return False
         return True
@@ -154,11 +197,27 @@ class VitexApp(Gtk.Application):
         self.monitor = gfile.monitor_file(Gio.FileMonitorFlags.NONE, None)
         self.monitor.connect("changed", self.reload_pdf)
 
+        overlay = Gtk.Overlay()
+        # stack.
         self.window.connect('key-press-event', self.on_key_press)
 
-        self.window.add(self.pane)
-        self.window.show_all()
+        overlay.add(self.pane)
+
+        self.eqn_ed_pane = Gtk.Revealer()
+        self.eqn_ed_pane.set_transition_type(Gtk.RevealerTransitionType.SLIDE_UP)
+        self.eqn_ed_pane.transition_duration = 400
+        # eqn_prev = Gtk.Image()
+        # eqn_prev.set_from_file("/home/caleb/Sources/vitex/vitex.png")
+        # self.eqn_ed_pane.add(Gtk.Label("Hello World"))
+        self.eqn_ed_pane.add(self.prev_scroll)
+        overlay.add_overlay(self.eqn_ed_pane)
+
+        # self.about_dialog = Gtk.AboutDialog()
+        # self.about_dialog.add_credit_section('makers', ['me', 'you', 'abu'])
+        # self.about_dialog.set_program_name('ViTeX')
+        self.window.add(overlay)
         self.add_window(self.window)
+        self.window.show_all()
         self.pane.set_position(self.window.get_allocated_width() // 2)  # in pixels
 
 
