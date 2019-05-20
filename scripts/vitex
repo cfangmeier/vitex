@@ -6,7 +6,7 @@ from vitex import vitex, __version__
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     add = parser.add_argument
-    add('texfile', help='The TeX file to edit')
+    add('srcfile', help='The TeX or Markdown file to edit')
     add('--version', action='version', version=f'Vitex v{__version__}')
     args = parser.parse_args()
     vitex(args)

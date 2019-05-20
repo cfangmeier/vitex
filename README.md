@@ -29,7 +29,7 @@ This is likely a non-exhaustive list, so please feel free to create an issue if 
   - Evince
   - neovim
   
- ## Controls
+## Controls
    - `ctrl -`: Decrease editor font size
    - `ctrl +`: Increase editor font size
    - `ctrl b`: Start async build with latexmk
