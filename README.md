@@ -18,6 +18,7 @@ Currently working on arch linux with the Gnome desktop environment.
   - Custom `init.vim` for editing LaTeX (of course feel free to personalize)
   - Embedded PDF view using Evince with auto reload
   - Synctex support
+  - Support for editing and viewing Markdown too
   - That's pretty much it!
 
 ## Requirements
@@ -28,7 +29,8 @@ This is likely a non-exhaustive list, so please feel free to create an issue if 
   - Gtk+
   - Evince
   - neovim
-  
+  - pandoc
+
 ## Controls
    - `ctrl -`: Decrease editor font size
    - `ctrl +`: Increase editor font size

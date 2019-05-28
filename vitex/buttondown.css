@@ -195,6 +195,7 @@ img
        paragraph, it might not be so great.
     */
     vertical-align: middle;
+    max-width: 100%;
     }
 
 div.figure /* Pandoc figure-style image */
